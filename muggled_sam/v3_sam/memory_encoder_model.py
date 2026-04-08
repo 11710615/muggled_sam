@@ -66,7 +66,7 @@ class SAMV3MemoryEncoder(nn.Module):
     # .................................................................................................................
 
     def forward(
-        self, lowres_image_encoding: Tensor, mask_prediction: Tensor, object_score: Tensor, is_prompt_encoding=False
+        self, lowres_image_encoding: Tensor, mask_prediction: Tensor, object_score: Tensor, is_prompt_encoding=torch.tensor(False)
     ) -> Tensor:
         """
         Takes the lowest-resolution image encoding and combines it

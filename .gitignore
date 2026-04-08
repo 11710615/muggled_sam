@@ -30,3 +30,8 @@ training/_*
 training/config/
 training/*.json
 training/*.txt
+
+# Ignore engine/onnx/pt files 
+*.engine
+*.onnx
+*.pt

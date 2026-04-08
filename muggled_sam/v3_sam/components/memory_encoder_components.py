@@ -77,7 +77,7 @@ class MaskDownsampler(nn.Module):
 
     # .................................................................................................................
 
-    def forward(self, mask_prediction: Tensor, target_hw: tuple[int, int], is_prompt_encoding=False) -> Tensor:
+    def forward(self, mask_prediction: Tensor, target_hw: tuple[int, int], is_prompt_encoding=torch.tensor(False)) -> Tensor:
         """
         Encodes mask prediction and resizes it to match the given target height & width.
         The target size is expected to match the image encodings, so that the encoded
@@ -108,8 +108,14 @@ class MaskDownsampler(nn.Module):
             align_corners=False,
         )
 
-        # Prepare mask data & downsample for fusion with image encoding
-        hires_mask = (hires_mask > 0.0).to(hires_mask.dtype) if is_prompt_encoding else torch.sigmoid(hires_mask)
+        """torch.where 实现 if-else 逻辑，用于trt导出"""
+        # # Prepare mask data & downsample for fusion with image encoding
+        # hires_mask = (hires_mask > 0.0).to(hires_mask.dtype) if is_prompt_encoding else torch.sigmoid(hires_mask)
+        thresholded = (hires_mask > 0.0).to(hires_mask.dtype)
+        sigmoided = torch.sigmoid(hires_mask)
+        condition = is_prompt_encoding.view(1, 1, 1, 1).expand(*hires_mask.shape).to(hires_mask.device)
+        hires_mask = torch.where(condition, thresholded, sigmoided)
+
         hires_mask = hires_mask * self.mask_scale + self.mask_bias
         target_hw_mask = self.downsample(hires_mask)
 

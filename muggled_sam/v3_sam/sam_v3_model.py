@@ -306,7 +306,7 @@ class SAMV3Model(nn.Module):
             best_obj_ptr = obj_ptrs[:, [mask_index_select]]
 
             # Encode initial memory
-            memory_encoding = self.memory_encoder(lowres_imgenc, best_mask_pred, obj_score, is_prompt_encoding=True)
+            memory_encoding = self.memory_encoder(lowres_imgenc, best_mask_pred, obj_score, is_prompt_encoding=torch.tensor(True))
 
         return best_mask_pred, memory_encoding, best_obj_ptr
 
@@ -378,7 +378,7 @@ class SAMV3Model(nn.Module):
 
             # Scale input to correct size before encoding
             mask_tensor = nn.functional.interpolate(mask_tensor, size=(4 * token_h, 4 * token_w))
-            memory_encoding = self.memory_encoder(lowres_imgenc, mask_tensor, obj_score, is_prompt_encoding=True)
+            memory_encoding = self.memory_encoder(lowres_imgenc, mask_tensor, obj_score, is_prompt_encoding=torch.tensor(True))
 
         return memory_encoding
 

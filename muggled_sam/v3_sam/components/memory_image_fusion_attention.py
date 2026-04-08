@@ -48,7 +48,7 @@ class RoPEAttentionBNC(nn.Module):
         features_per_token: int,
         features_per_kv_token: int | None = None,
         rope_theta: float = 10000.0,
-        use_complex_numbers: bool = True,
+        use_complex_numbers: bool = False,
     ):
         # Inherit from parent
         super().__init__()
