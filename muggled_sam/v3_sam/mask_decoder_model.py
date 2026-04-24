@@ -464,13 +464,11 @@ class ObjectPointerGen(nn.Module):
         # Compute object score (indicator of whether there is a valid object being masked)
         objscore = self.score_mlp(encoded_object_token)
 
-        # Get pointer for each batch
-        objptrs_list = []
-        for batch_idx in range(encoded_mask_tokens.shape[0]):
-            tokens = encoded_mask_tokens[batch_idx]
-            ptr = self.pointer_mlp(tokens) if objscore[batch_idx] > 0 else self.no_ptr.expand_as(tokens)
-            objptrs_list.append(ptr)
-        objptrs = torch.stack(objptrs_list)
+        # Get pointer for each batch in a tensor-friendly way
+        objscore_mask = (objscore > 0).view(-1, 1, 1)  # [B, 1, 1]
+        ptrs = self.pointer_mlp(encoded_mask_tokens)  # [B, N, F]
+        no_ptrs = self.no_ptr.expand_as(encoded_mask_tokens)
+        objptrs = torch.where(objscore_mask, ptrs, no_ptrs)
 
         return objscore, objptrs
 

@@ -4,7 +4,7 @@ except ModuleNotFoundError:
     import os
     import sys
 
-    parent_folder = os.path.dirname(os.path.dirname(__file__))
+    parent_folder = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     if "muggled_sam" in os.listdir(parent_folder):
         sys.path.insert(0, parent_folder)
     else:
@@ -116,8 +116,15 @@ def export_SAMV3MaskDecoder(sammodel, output_path: str, device="cpu"):
                       do_constant_folding=True,
                       input_names=["lowres_tokens", "hires_tokens_x2", "hires_tokens_x4", "encoded_prompts_bnc", "grid_positional_encoding"], 
                       output_names=["mask_preds", "iou_preds", "obj_ptrs","obj_score"], 
-                      dynamic_axes=({"encoded_prompts_bnc":{1: "num_point"}}),
-                      verify=True)
+                      verify=True,
+                      dynamo=True,
+                      dynamic_shapes=(
+                                        {},  # lowres_tokens
+                                        {},                                     # hires_tokens_x2
+                                        {},                                     # hires_tokens_x4
+                                        {1: "num_point"},                       # encoded_prompts_bnc
+                                        {},                                     # grid_positional_encoding
+                                    ))
     # 打印保存确认信息
     print(f"saved to: {output_path}/mask_decocder.onnx")
 
@@ -191,6 +198,29 @@ def export_SAMV3MemoryImageFusion(SAMV3MemoryImageFusion_wrapper, output_path: s
     # 打印保存确认信息
     print(f"saved to: {output_path}/image_SAMV3MemoryImageFusion.onnx")
 
+def save_weights(model, output_dir):
+    geometry_weights = {}  # geometry_weights[key] = weight
+    geometry_weights["label_embed.weight"] = model.geometry_encoder.label_embed.weight
+    geometry_weights["points_direct_project.weight"] = model.geometry_encoder.points_direct_project.weight
+    geometry_weights["points_pool_project.weight"] = model.geometry_encoder.points_pool_project.weight
+    geometry_weights["points_pos_enc_project.weight"] = model.geometry_encoder.points_pos_enc_project.weight
+    geometry_weights["boxes_direct_project.weight"] = model.geometry_encoder.boxes_direct_project.weight
+    geometry_weights["boxes_pool_project.weight"] = model.geometry_encoder.boxes_pool_project.weight
+    geometry_weights["boxes_pos_enc_project.weight"] = model.geometry_encoder.boxes_pos_enc_project.weight
+    geometry_weights["img_pre_norm.weight"] = model.geometry_encoder.img_pre_norm.weight
+
+    geometry_weights["points_direct_project.bias"] = model.geometry_encoder.points_direct_project.bias
+    geometry_weights["points_pool_project.bias"] = model.geometry_encoder.points_pool_project.bias
+    geometry_weights["points_pos_enc_project.bias"] = model.geometry_encoder.points_pos_enc_project.bias
+    geometry_weights["boxes_direct_project.bias"] = model.geometry_encoder.boxes_direct_project.bias
+    geometry_weights["boxes_pool_project.bias"] = model.geometry_encoder.boxes_pool_project.bias
+    geometry_weights["boxes_pos_enc_project.bias"] = model.geometry_encoder.boxes_pos_enc_project.bias
+    geometry_weights["img_pre_norm.bias"] = model.geometry_encoder.img_pre_norm.bias
+
+    model_weights = {}
+    model_weights["geometry_weights"] = geometry_weights
+    torch.save(model_weights, output_dir / "model_weights.pt")
+    print(f"  ✓ Saved: {output_dir / 'model_weights.pt'}") 
 
 if __name__ == "__main__":
     # Define pathing & device usage
@@ -234,5 +264,20 @@ if __name__ == "__main__":
     # 6: export memory_image_fusion_model
     # memory_image_fusion_model = SAMV3MemoryImageFusion_wrapper(sammodel)
     # export_SAMV3MemoryImageFusion(memory_image_fusion_model, output_path=onnx_output_dir)
+
+    """
+    save PCS geometry_weights:
+    "label_embed", 
+    "points_direct_project", "points_pool_project", "points_pos_enc_project",
+    "boxes_direct_project", "boxes_pool_project", "boxes_pos_enc_project",
+    "img_pre_norm",
+    """
+    # if os.path.exists(f"{onnx_output_dir}/model_weights.pt"):
+    #     save_dict = torch.load(f"{onnx_output_dir}/model_weights.pt")
+    # else:
+    #     save_dict = {}
+    # save_dict["coordinate_encoder"] = sammodel.coordinate_encoder.state_dict()
+    # save_dict["prompt_encoder"] = sammodel.prompt_encoder.state_dict()
+    # torch.save(save_dict, f"{onnx_output_dir}/model_weights.pt")
 
 

@@ -24,8 +24,8 @@ from muggled_sam.demo_helpers.bounding_boxes import get_2box_iou
 
 # Define pathing & device usage
 initial_frame_index = 0
-video_path = "/path/to/video.mp4"
-detection_model_path = "/path/to/sam3.pth"
+video_path = "/mnt/kvein/pank1/Annoto-main0408/assets/videos/bedroom.mp4"
+detection_model_path = "/home/kvein/sam3/sam3/modelweight/sam3.pt"
 tracking_model_path = None  # Can use a SAMv2 model! Leave as None to re-use the detection model for tracking
 device, dtype = "cpu", torch.float32
 if torch.cuda.is_available():
@@ -36,7 +36,7 @@ pos_box_xy1xy2_norm_list = []  # Format is: [[(x1, y1), (x2, y2)]]
 neg_box_xy1xy2_norm_list = []
 pos_point_xy_norm_list = []  # Format is [(x1, y1)]
 neg_point_xy_norm_list = []
-text_prompt = "person"
+text_prompt = "girl"
 
 # Controls for detection/tracking
 detect_every_n_frames = 10  # Set to None to only run once on startup
